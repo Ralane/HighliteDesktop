@@ -11,22 +11,22 @@ export class CustomCursor extends Plugin {
         this.settings.cursorOffset = {
             text: 'Cursor Offset',
             type: SettingsTypes.text,
-            value: "auto",
-            callback: this.set_cursor,
+            value: "auto !important",
+            callback: this.reset_cursor,
         } as any;
 
         this.settings.cursorImagePresets = {
             text: 'Cursor Presets',
             type: SettingsTypes.range,
             value: 1,
-            callback: this.set_cursor,
+            callback: this.reset_cursor,
         } as any;
 
         this.settings.cursorCustomImage = {
             text: 'Cursor Custom Image',
             type: SettingsTypes.text,
             value: "",
-            callback: this.set_cursor,
+            callback: this.reset_cursor,
         } as any;
     }
     
@@ -73,28 +73,37 @@ export class CustomCursor extends Plugin {
         this.clear_cursor();
     }
 
-    // Create UI Element
-    private createcursorElement(cursorName: string | null): void {
-        let screenMask = document.querySelector("#body-container") as HTMLElement;
-        if(!screenMask) {
-            return;
+    private addCSSStyles(cursorName?: string): void {
+        const preexistingStyle = document.head.querySelector('#cursorStyle');
+        if(preexistingStyle) {
+            document.head.removeChild(preexistingStyle);
         }
-        if(!cursorName) {
-            screenMask.setAttribute(`style`, ``);
-        } else {
-            screenMask.setAttribute(`style`, `cursor: ${cursorName};`);
+        if(cursorName) {
+            const style = document.createElement('style');
+            style.id = "cursorStyle";
+            style.textContent = `
+                /* Ensure panel takes full width and height */
+                .full-size {
+                    cursor: ${cursorName};
+                }
+                .full-size:hover {
+                    cursor: ${cursorName};
+                }
+            `;
+            document.head.appendChild(style);
         }
     }
 
     set_cursor() {
-        this.createcursorElement(`${this.get_cursor_url()}, ${this.settings.cursorOffset.value || 'auto'}`);
+        this.addCSSStyles(`${this.get_cursor_url()}, ${this.settings.cursorOffset.value || 'auto'}`);
+    }
+
+    reset_cursor() {
+        this.clear_cursor();
+        this.set_cursor();
     }
 
     clear_cursor() {
-        this.createcursorElement(null);
-    }
-
-    GameLoop_update(): void {
-        this.set_cursor()
+        this.addCSSStyles();
     }
 }
