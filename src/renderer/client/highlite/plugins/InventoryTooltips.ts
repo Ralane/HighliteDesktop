@@ -4,7 +4,7 @@ import { UIManager, UIManagerScope } from '../core/managers/highlite/uiManager';
 
 export class InventoryTooltips extends Plugin {
     pluginName = 'Inventory Tooltips';
-    author = 'Valsekamerplant';
+    author = 'Valsekamerplant & 0rangeYouGlad';
     private uiManager = new UIManager();
     tooltipUI: HTMLElement | null = null;
     tooltip: HTMLElement | null = null;
@@ -22,17 +22,10 @@ export class InventoryTooltips extends Plugin {
     constructor() {
         super();
 
-        this.settings.enabled = {
-            text: 'Enable Chat Item Tooltips',
+        this.settings.bankItemsEnabled = {
+            text: 'Enable Bank Item Tooltips',
             type: SettingsTypes.checkbox,
             value: true,
-            callback: () => {
-                if (this.settings.enabled.value) {
-                    this.start();
-                } else {
-                    this.stop();
-                }
-            },
         } as any;
     }
 
@@ -62,6 +55,29 @@ export class InventoryTooltips extends Plugin {
         this.removeTooltip();
     }
 
+    mouseOverBank = (event: MouseEvent, target: HTMLElement) => {
+        if(this.settings.bankItemsEnabled.value) {
+
+            const itemElBank = target.closest(
+                '.hs-item-table--bank .hs-item-table__cell'
+            );
+
+            if(itemElBank) {
+                // Get the slot ID from the element
+                const slotIdStr = itemElBank.getAttribute('data-slot');
+                if (!slotIdStr) return false;
+                const slotId = parseInt(slotIdStr, 10);
+                const bankItems = document.highlite?.gameHooks?.EntityManager?.Instance?.MainPlayer?._bankItems?.Items || [];
+                const item = bankItems[slotId];
+
+                if (!item) return false;
+                this.showTooltip(event, item._def);
+                return true;
+            }
+        }
+        return false;
+    }
+
     /**
      * Mouse enter handler for inventory slots. Shows tooltip for hovered item.
      * @param event MouseEvent
@@ -70,19 +86,22 @@ export class InventoryTooltips extends Plugin {
         const target = event.target as HTMLElement;
         if (!target || typeof target.closest !== 'function') return;
 
-        const itemEl = target.closest(
-            '.hs-item-table--inventory .hs-item-table__cell'
-        );
-        if (!itemEl) return;
-        // Get the slot ID from the element
-        const slotIdStr = itemEl.getAttribute('data-slot');
-        if (!slotIdStr) return;
-        const slotId = parseInt(slotIdStr, 10);
-        const inventoryItems =
-            this.gameHooks.EntityManager.Instance.MainPlayer.Inventory.Items;
-        const item = inventoryItems[slotId];
-        if (!item) return;
-        this.showTooltip(event, item._def);
+        if(!this.mouseOverBank(event, target)) {
+            const itemEl = target.closest(
+                '.hs-item-table--inventory .hs-item-table__cell'
+            );
+
+            if (!itemEl) return;
+            // Get the slot ID from the element
+            const slotIdStr = itemEl.getAttribute('data-slot');
+            if (!slotIdStr) return;
+            const slotId = parseInt(slotIdStr, 10);
+            const inventoryItems =
+                this.gameHooks.EntityManager.Instance.MainPlayer.Inventory.Items;
+            const item = inventoryItems[slotId];
+            if (!item) return;
+            this.showTooltip(event, item._def);
+        }
     };
 
     /**
