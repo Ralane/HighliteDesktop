@@ -2480,6 +2480,7 @@ export class DefinitionsPanel extends Plugin {
                     'Iron',
                     'Steel',
                     'Palladium',
+                    'Silver',
                     'Gold',
                     'Coronium',
                     'Celadium',
