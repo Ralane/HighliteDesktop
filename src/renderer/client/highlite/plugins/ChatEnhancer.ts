@@ -3,7 +3,7 @@ import { SettingsTypes } from '../core/interfaces/highlite/plugin/pluginSettings
 
 export class ChatEnhancer extends Plugin {
     pluginName = 'Chat Enhancer';
-    author = 'JayArrowz & Answerth & 0rangeYouGlad';
+    author = 'JayArrowz & Answerth';
 
     private observers: MutationObserver[] = [];
     private listeners: {
