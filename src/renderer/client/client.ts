@@ -30,6 +30,7 @@ import { ChatEnhancer } from './highlite/plugins/ChatEnhancer';
 import { CustomCursor } from './highlite/plugins/CustomCursor';
 import { QuickActionMouseTooltip } from './highlite/plugins/QuickActionMouseTooltip';
 import { ExtraInfoBar } from './highlite/plugins/ExtraInfoBar';
+import { SpellTooltips } from './highlite/plugins/SpellTooltips';
 
 import '@iconify/iconify';
 import '@static/css/index.css';
@@ -78,6 +79,7 @@ const PLUGIN_REGISTRY = [
     { class: CustomCursor, path: './highlite/plugins/CustomCursor' },
     { class: QuickActionMouseTooltip, path: './highlite/plugins/QuickActionMouseTooltip' },
     { class: ExtraInfoBar, path: './highlite/plugins/ExtraInfoBar' },
+    { class: SpellTooltips, path: './highlite/plugins/SpellTooltips' },
 ];
 
 async function obtainGameClient() {
