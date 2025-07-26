@@ -897,6 +897,18 @@ export class ChatEnhancer extends Plugin {
                     textContainer.prepend(span);
                     this.trackInjected(span);
                 }
+
+                const clanSpan = document.createElement('span');
+                clanSpan.textContent = '[HEDGE 🧙🏻‍♀️]';
+
+                const preText = msgEl.querySelector(
+                    '.hs-chat-menu__pre-text'
+                );
+                if (preText) {
+                    clanSpan.setAttribute('data-chat-enhancer-injected', 'true');
+                    preText.prepend(clanSpan);
+                    this.trackInjected(clanSpan);
+                }
             }
 
             if (this.settings.enableFilters?.value) {

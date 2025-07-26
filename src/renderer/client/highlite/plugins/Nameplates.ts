@@ -935,11 +935,24 @@ export class Nameplates extends Plugin {
         element.style.position = 'absolute';
         element.style.pointerEvents = 'none';
         element.style.zIndex = '1000';
+        
         element.style.color = isMainPlayer ? 'cyan' : 'white';
+        element.style.display = 'flex';
+        element.style.flexDirection = 'column';
+        element.style.justifyContent = 'center';
+
         element.style.fontSize = isMainPlayer
             ? `${this.settings.youNameplateSize!.value}px`
             : `${this.settings.playerNameplateSize!.value}px`;
-        element.innerHTML = player._name;
+
+        const clanTag = document.createElement('div');
+        clanTag.style.pointerEvents = 'none';
+        clanTag.style.fontSize = isMainPlayer
+            ? `${this.settings.youNameplateSize!.value - 4}px`
+            : `${this.settings.playerNameplateSize!.value - 4}px`;
+        clanTag.innerHTML = `[HEDGE 🧙🏻‍♀️]`;
+        
+        element.innerHTML = `<div>${player._name}</div>${clanTag.innerHTML}`;
 
         // Apply theming
         this.applyPlayerElementTheme(element, isMainPlayer);
