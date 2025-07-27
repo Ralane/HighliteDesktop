@@ -8,6 +8,7 @@ export class PlayerTagger extends Plugin {
     private injectedEls: HTMLElement[] = [];
     private isInitialized = false;
     private messageWatchersSetup = false;
+    private nameplateWatchersSetup = false;
     private processedMessages = new Set<HTMLElement>();
 
     private defaultTagStyle = 'background:rgba(0.1,0.1,0.1,0.6) ; border-radius:2px; border:2px solid rgba(0, 0, 0, 1); text-align: center;padding:2px 6px;margin-right:6px;color:white;font-weight: 300;';
@@ -47,17 +48,32 @@ export class PlayerTagger extends Plugin {
     constructor() {
         super();
 
+        // TODO use actual JSON for this?
         this.settings.playerTags = {
             text: 'Player Tags (username:tag1,tag2;username2:tag1,tag2;)',
             type: SettingsTypes.text,
-            value: '0rangeYouGlad:HEDGE,PLUGIN DEV; Bunnygirl:HEDGE',
+            value: '0rangeYouGlad:HEDGE🧙‍♀️,PLUGIN DEV;',
             callback: () => {},
         };   
 
         this.settings.tagStyles = {
             text: 'Tag styles (+tag=css +tag2=css)',
             type: SettingsTypes.text,
-            value: '+HEDGE=font-weight:300;background:rgba(230,230,250,200);border:2px solid rgba(75,0,130,255);border-radius:2px;text-align: center;padding:2px 6px;margin-right:6px;color:rgba(75,0,130,255);',
+            value: '+HEDGE🧙‍♀️=font-weight:300;background:rgba(230,230,250,200);border:2px solid rgba(75,0,130,255);border-radius:2px;text-align: center;padding:2px 6px;margin-right:6px;color:rgba(75,0,130,255);',
+            callback: () => {},
+        };
+
+        this.settings.tagChat = {
+            text: 'Chat Tags',
+            type: SettingsTypes.checkbox,
+            value: true,
+            callback: () => {},
+        };
+
+        this.settings.tagNameplates = {
+            text: 'Nameplate Tags',
+            type: SettingsTypes.checkbox,
+            value: true,
             callback: () => {},
         };
     }
@@ -66,7 +82,8 @@ export class PlayerTagger extends Plugin {
         this.log('Initialized PlayerTagger');
         if(this.settings.enable.value) {
             this.isInitialized = true;
-            this.setupMessageWatching();
+            if(this.settings.tagChat.value) this.setupMessageWatching();
+            if(this.settings.tagNameplates.value) this.setupNameplateWatching();
         }
     }
 
@@ -94,14 +111,30 @@ export class PlayerTagger extends Plugin {
             window.clearInterval(this.messageCheckInterval);
             this.messageCheckInterval = null;
         }
+        
+        if (this.nameplateCheckInterval) {
+            window.clearInterval(this.nameplateCheckInterval);
+            this.nameplateCheckInterval = null;
+        }
 
         this.processedMessages.clear();
 
         this.isInitialized = false;
         this.messageWatchersSetup = false;
+        this.nameplateWatchersSetup = false;
         this.log('PlayerTagger cleanup complete');
     }
 
+    private setupNameplateWatching(): void {
+        if (this.nameplateWatchersSetup) return;
+        this.nameplateWatchersSetup = true;
+
+        this.scanAllNameplates();
+
+        this.nameplateCheckInterval = window.setInterval(() => {
+            this.scanAllNameplates();
+        }, 500);
+    }
     
     private setupMessageWatching(): void {
         if (this.messageWatchersSetup) return;
@@ -140,6 +173,58 @@ export class PlayerTagger extends Plugin {
         this.messageCheckInterval = window.setInterval(() => {
             this.scanAllMessages();
         }, 500);
+    }
+
+    private scanAllNameplates(): void {
+        if (!this.settings.enable?.value || !this.isInitialized) return;
+
+        const containers = [
+            document.querySelector('#highlite-nameplates'),
+        ];
+
+        containers.forEach(container => {
+            if (container) {
+                this.processNewNameplate(container as HTMLElement);
+            }
+        });
+    }
+
+
+    private processNewNameplate(container: HTMLElement): void {
+        if (!container) return;
+        if (!this.settings.enable?.value || !this.isInitialized) return;
+
+        this.log("Process new nameplate: " + JSON.stringify(container.innerHTML));
+
+        const messages = container.querySelectorAll(
+`[id^='highlite-nameplates-player']`        );
+        let foundNewMessages = false;
+
+        messages.forEach(msg => {
+            const msgEl = msg as HTMLElement;
+
+            if (this.processedMessages.has(msgEl)) return;
+
+            foundNewMessages = true;
+            this.processedMessages.add(msgEl);
+
+            const playerName = `${msg.textContent}`.trim();
+
+            if (
+                !msgEl.dataset.playerTagsInjected
+            ) {
+                msgEl.dataset.playerTagsInjected = 'true';
+                const span = this.getTagSpan(playerName);
+
+                span.setAttribute('data-player-tag-injected', 'true');
+                msgEl.prepend(span);
+                this.trackInjected(msgEl);
+            }
+        });
+
+        if (foundNewMessages) {
+            this.cleanupProcessedElements();
+        }
     }
 
     private scanAllMessages(): void {
@@ -191,17 +276,17 @@ export class PlayerTagger extends Plugin {
                 if (playerNameContainer) {
                     span.setAttribute('data-player-tag-injected', 'true');
                     playerNameContainer.prepend(span);
-                    this.trackInjected(span);
+                    this.trackInjected(msgEl);
                 }
             }
         });
 
         if (foundNewMessages) {
-            this.cleanupProcessedMessages();
+            this.cleanupProcessedElements();
         }
     }
 
-    private cleanupProcessedMessages(): void {
+    private cleanupProcessedElements(): void {
         this.processedMessages.forEach(msgEl => {
             if (!document.contains(msgEl)) {
                 this.processedMessages.delete(msgEl);
