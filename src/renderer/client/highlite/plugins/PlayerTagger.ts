@@ -11,7 +11,7 @@ export class PlayerTagger extends Plugin {
     private nameplateWatchersSetup = false;
     private processedMessages = new Set<HTMLElement>();
 
-    private defaultTagStyle = 'background:rgba(0.1,0.1,0.1,0.6) ; border-radius:2px; border:2px solid rgba(0, 0, 0, 1); text-align: center;padding:2px 6px;margin-right:6px;color:white;font-weight: 300;';
+    private defaultTagStyle = 'background:rgba(0.1,0.1,0.1,0.6) ; border-radius:2px; border:2px solid rgba(0, 0, 0, 1); text-align: center;padding:2px 2px;margin-right:2px;color:white;font-weight: 300; line-height: 2; font-size: x-small;';
 
     getTagStyle(tag: string) {
         var tags = this.settings.tagStyles.value?.split("+");
@@ -59,7 +59,7 @@ export class PlayerTagger extends Plugin {
         this.settings.tagStyles = {
             text: 'Tag styles (+tag=css +tag2=css)',
             type: SettingsTypes.text,
-            value: '+HEDGE🧙‍♀️=font-weight:300;background:rgba(230,230,250,200);border:2px solid rgba(75,0,130,255);border-radius:2px;text-align: center;padding:2px 6px;margin-right:6px;color:rgba(75,0,130,255);',
+            value: '+HEDGE🧙‍♀️=font-size: x-small; line-height: 2; font-weight:300;background:rgba(230,230,250,200);border:2px solid rgba(75,0,130,255);border-radius:2px;text-align: center;padding:2px 2px;margin-right:2px;color:rgba(75,0,130,255);',
             callback: () => {},
         };
 
@@ -194,8 +194,6 @@ export class PlayerTagger extends Plugin {
         if (!container) return;
         if (!this.settings.enable?.value || !this.isInitialized) return;
 
-        this.log("Process new nameplate: " + JSON.stringify(container.innerHTML));
-
         const messages = container.querySelectorAll(
 `[id^='highlite-nameplates-player']`        );
         let foundNewMessages = false;
@@ -218,7 +216,7 @@ export class PlayerTagger extends Plugin {
 
                 span.setAttribute('data-player-tag-injected', 'true');
                 msgEl.prepend(span);
-                this.trackInjected(msgEl);
+                this.trackInjected(span);
             }
         });
 
@@ -276,7 +274,7 @@ export class PlayerTagger extends Plugin {
                 if (playerNameContainer) {
                     span.setAttribute('data-player-tag-injected', 'true');
                     playerNameContainer.prepend(span);
-                    this.trackInjected(msgEl);
+                    this.trackInjected(span);
                 }
             }
         });
