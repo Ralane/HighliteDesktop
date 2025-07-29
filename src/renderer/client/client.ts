@@ -33,6 +33,7 @@ import { ExtraInfoBar } from './highlite/plugins/ExtraInfoBar';
 import { SpellTooltips } from './highlite/plugins/SpellTooltips';
 import { PlayerTagger } from './highlite/plugins/PlayerTagger';
 import { TtsChat } from './highlite/plugins/TtsChat';
+import { BankTabs } from './highlite/plugins/BankTabs';
 
 import '@iconify/iconify';
 import '@static/css/index.css';
@@ -84,6 +85,7 @@ const PLUGIN_REGISTRY = [
     { class: SpellTooltips, path: './highlite/plugins/SpellTooltips' },
     { class: PlayerTagger, path: './highlite/plugins/PlayerTagger' },
     { class: TtsChat, path: './highlite/plugins/TtsChat' },
+    { class: BankTabs, path: './highlite/plugins/BankTabs' },
 ];
 
 async function obtainGameClient() {

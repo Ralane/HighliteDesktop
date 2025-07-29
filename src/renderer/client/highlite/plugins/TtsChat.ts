@@ -92,20 +92,27 @@ export class TtsChat extends Plugin {
             callback: () => {},
         };
 
+        this.settings.ignoreSelf = {
+            text: 'Ingore Own Messages',
+            type: SettingsTypes.checkbox,
+            value: true,
+            callback: () => {},
+        };
+
     }
 
     init(): void {
         this.log('Initialized TtsChat');
+    }
+
+    start(): void {
+        this.log('Started TtsChat');
         if(this.settings.enable.value) {
             this.synth = window.speechSynthesis;
             this.voices = this.synth.getVoices();
             this.isInitialized = true;
             this.setupMessageWatching();
         }
-    }
-
-    start(): void {
-        this.log('Started TtsChat');
     }
 
     stop(): void {
@@ -210,7 +217,7 @@ export class TtsChat extends Plugin {
 
         utterThis.volume = Number(this.settings.volume.value);
 
-        this.log("Speaking with voice " + utterThis.voice.name + " at pitch " + utterThis.pitch + " and rate " + utterThis.rate);
+        // this.log("Speaking with voice " + utterThis.voice.name + " at pitch " + utterThis.pitch + " and rate " + utterThis.rate);
 
         if(this.settings.interruptableVoices.value) {
             this.synth.cancel();
@@ -248,23 +255,41 @@ export class TtsChat extends Plugin {
             }
             const playerName = `${playerNameContainer?.textContent}`.replace("From ", "").replace(":", "").trim();
 
-            let textContent = msgEl.querySelector('.hs-chat-menu__message-text-container')?.textContent?.replaceAll('[-]', '');
+            const mainPlayerName = document.querySelector('#hs-chat-input-player-name-and-input-container')?.textContent?.split(":")[0].trim();
+            let textContent = msgEl.querySelector('.hs-chat-menu__message-text-container')?.textContent?.replace('[-]', '');
 
             if (
                 !msgEl.dataset.ttsInjected
             ) {
                 msgEl.dataset.ttsInjected = 'true';
+                
+                this.log("TTS " + playerName + " " + mainPlayerName);
 
-                if(!this.settings.globalChat.value && msgEl.querySelector('.hs-text--orange')) return;
-                if(!this.settings.privateChat.value && msgEl.querySelector('.hs-text--cyan')) return;
-                if(!this.settings.localChat.value && msgEl.querySelector('.hs-text--yellow')) return;
+                if(this.settings.ignoreSelf.value && playerName === mainPlayerName) {
+                    this.log("TTS Ignoring Self chat");
+                }
+                else if(!this.settings.globalChat.value && msgEl.querySelector('.hs-text--orange'))
+                {
+                    this.log("TTS Ignoring Global chat");
+                }
+                else if(!this.settings.privateChat.value && msgEl.querySelector('.hs-text--cyan')) {
+                    this.log("TTS Ignoring Private chat");
+                }
+                else if(!this.settings.localChat.value && msgEl.querySelector('.hs-text--yellow')) {
+                    this.log("TTS Ignoring Local chat");
+                }
 
-                if(this.settings.sayPlayerNames.value && playerName && playerNameContainer?.textContent) {
-                    this.speak(`${playerName} says ${textContent}`, playerName);
+                else if(playerName && playerNameContainer?.textContent) {
+                    if(this.settings.sayPlayerNames.value) { 
+                        this.speak(`${playerName} says ${textContent}`, playerName);
+                    } else {
+                        this.speak(`${textContent}`, playerName);
+                    }
                 } else if(this.settings.sayGameMessages.value) {
                     this.speak(`${textContent}`, playerName);
                 }
             }
-        });
+        }
+        );
     }
 }
