@@ -7,9 +7,8 @@ export class BankTabs extends Plugin {
 
     private tabBox: HTMLElement | null = null;
     private resizeListener: (() => void) | null = null;
-    private lastQuery: string = '';
-    private tabCount = 8;
-    private selectedTab = 0;
+    private lastQuery: [string] = ['*'];
+    private selectedTab = 'All';
 
     constructor() {
         super();
@@ -18,6 +17,46 @@ export class BankTabs extends Plugin {
             text: 'Remember selected tab between banking session',
             type: SettingsTypes.checkbox,
             value: false,
+            callback: () => {},
+        }
+
+        this.settings.tabGroups = {
+            text: `Tab Groups ({tabName1: ['item1', 'item2'], tabName2: ['item1', 'item2']} (accepts both item IDs and item names)`,
+            type: SettingsTypes.text,
+            value: `{
+   "All":[
+      "*"
+   ],
+   "Food":[
+      "Baked Potato",
+      "Carrot",
+      "Clownfish",
+      "Rodent Meat",
+      "Bass",
+      "Bluegill",
+      "Chicken",
+      "Grilled Corn",
+      "Steak",
+      "Game Meat",
+      "Half Glass Of Calcium Brew",
+      "Half Glass Of Giant's Milk",
+      "Salmon",
+      "Carp",
+      "Piranha",
+      "Stingray",
+      "Koi",
+      "Walleye",
+      "Calcium Brew",
+      "Crab",
+      "Giant's Milk",
+      "Frog",
+      "Tuna",
+      "Marlin",
+      "Turtle",
+      "Whaleshark",
+      "Octopus"
+   ]
+}`,
             callback: () => {},
         }
     }
@@ -130,6 +169,7 @@ export class BankTabs extends Plugin {
   padding: 14px 16px;
   transition: 0.3s;
   background-color: rgb(130, 130, 130);
+  width: min-content;
 }
 
 /* Change background color of buttons on hover */
@@ -137,6 +177,10 @@ export class BankTabs extends Plugin {
   background-color: rgb(170, 170, 170);
   // border: solid 2px;
   // border-color: rgb(211, 211, 211);
+}
+
+.bank-tab-button.dragover {
+  background-color: purple;
 }
 
 /* Create an active/current tablink class */
@@ -158,22 +202,32 @@ export class BankTabs extends Plugin {
         tabBox.classList.add('bank-tabs-container');
         this.tabBox = tabBox;
 
-        for (let i = 0; i < this.tabCount; i++) {
+        let tabJson = JSON.parse(`${this.settings.tabGroups.value}`);
+
+        if(!Object.keys(tabJson).includes('All')) {
+            this.log("Bank Tabs: Inserted ALL tab");
+            tabJson = {All: ['*'], ...tabJson};
+        }
+
+        Object.keys(tabJson).forEach((key) => {
             // Create the tab buttons
-            const input = document.createElement('button');
+            const input = document.createElement('input');
             // const iconSlot = 11 + i;
             // input.innerHTML = `<div id="hs-inventory-item--${iconSlot}" class="hs-inventory-item" draggable="false"><div class="hs-inventory-item__image" style="display: block;padding:24px"></div></div>Tab ${i}`;
-            input.innerHTML = `Tab ${i}`;
+            input.value = `${key.trim()}`;
             input.style.flex = 'flex-grow';
+            input.id = `bank-tab-id-${key.trim()}`;
+            input.maxLength = 0;
+            input.size = 1;
             input.classList.add('bank-tab-button');
             input.classList.add('hs-text--white');
             // input.classList.add('hs-text-button hs-text-button-with-bg')
 
             if(this.settings.memory.value) {
-                if(i === this.selectedTab)
+                if(key === this.selectedTab)
                     input.classList.add('active');
             } else {
-                if(i === 0) {
+                if(key === 'All') {
                     input.classList.add('active');
                 }
             }
@@ -184,22 +238,92 @@ export class BankTabs extends Plugin {
             
             // Input event
             input.addEventListener('click', e => {
-                this.log(`Bank Tab selected: ${i}`)
-                const query = input.value.trim().toLowerCase();
+                this.log(`Bank Tab selected: ${key}`)
+                let tabJsonNew = JSON.parse(`${this.settings.tabGroups.value}`);
+
+                const query = tabJsonNew[key];
                 this.lastQuery = query; // Store the last query
                 this.highlightBankQuery(query);
-                this.selectedTab = i;
+                this.selectedTab = key;
 
                 let allTabs = document.getElementsByClassName("bank-tab-button");
                 for (let b = 0; b < allTabs.length; b++) {
-                    if(b === i) {
+                    if(allTabs[b].id === `bank-tab-id-${this.selectedTab.trim()}`) {
                         allTabs[b].className = `${allTabs[b].className} active`;
                     } else {
-                        allTabs[b].className = allTabs[b].className.replace(" active", "");
+                        allTabs[b].className = allTabs[b].className.replaceAll(" active", "");
                     }
                 }
             });
-        }
+
+            input.addEventListener("drop", (event) => {
+            // prevent default action (open as link for some elements)
+            event.preventDefault();
+            // this.log(event);
+              const data = event.dataTransfer?.getData("text");
+                // this.log(data);
+
+                        // Get bank items from the game data
+        const bankItems =
+            document.highlite?.gameHooks?.EntityManager?.Instance?.MainPlayer
+                ?._bankItems?.Items || [];
+
+                const itemElement = document.getElementById(data);
+
+
+                         const bankItem = bankItems[Number(itemElement?.parentElement?.getAttribute('data-slot'))];
+            if (!bankItem) {
+                return;
+            }
+
+            // Get item definition
+            const itemDef = document.highlite?.gameHooks?.ItemDefMap?.ItemDefMap
+                ?.get
+                ? document.highlite.gameHooks.ItemDefMap.ItemDefMap.get(
+                      bankItem._id
+                  )
+                : null;
+
+                const itemId = bankItem._id;
+            const itemName = itemDef
+                ? itemDef._nameCapitalized ||
+                  itemDef._name ||
+                  `Item ${bankItem._id}`
+                : `Item ${bankItem._id}`;
+
+                this.log(`Dragged ${itemName} ID ${itemId} to tab ${key}`);
+
+                let tabJsonTmp = JSON.parse(`${this.settings.tabGroups.value}`);
+
+                Object.keys(tabJsonTmp).forEach((allKey) => {
+                    let index = tabJsonTmp[allKey].indexOf(`${itemId}`);
+                    if (index > -1) {
+                        this.log(`Removed ${itemName} ID ${itemId} from tab ${allKey}`);
+                        tabJsonTmp[allKey].splice(index, 1);
+                    }
+
+                    index = tabJsonTmp[allKey].indexOf(`${itemName}`);
+                    if (index > -1) {
+                        this.log(`Removed ${itemName} ID ${itemId} from tab ${allKey}`);
+                        tabJsonTmp[allKey].splice(index, 1);
+                    }
+
+                })
+                
+                tabJsonTmp[key] = [...(tabJsonTmp[key]), itemName];
+
+                this.log("New JSON: " + JSON.stringify(tabJsonTmp));
+
+                this.settings.tabGroups!.value = JSON.stringify(tabJsonTmp);
+
+                const query = tabJsonTmp[this.selectedTab];
+                this.lastQuery = query; // Store the last query
+                this.highlightBankQuery(query);
+
+            });
+
+
+        });
 
 
         // Insert the tab box immediately before the close button
@@ -224,7 +348,7 @@ export class BankTabs extends Plugin {
         }
     }
 
-    highlightBankQuery(query) {
+    highlightBankQuery(query: [string]) {
         // Get bank items from the game data
         const bankItems =
             document.highlite?.gameHooks?.EntityManager?.Instance?.MainPlayer
@@ -240,7 +364,7 @@ export class BankTabs extends Plugin {
         );
 
         // If query is empty, show all items
-        if (!query) {
+        if (!query || !query.length || query.some((s) => s === '*')) {
             itemElements.forEach(el => {
                 (el as HTMLElement).style.display = '';
             });
@@ -270,7 +394,7 @@ export class BankTabs extends Plugin {
                   `Item ${bankItem._id}`
                 : `Item ${bankItem._id}`;
 
-            if (itemName.toLowerCase().includes(query)) {
+            if (query.some((q) => itemName.toLowerCase() === q.trim().toLowerCase() || `${itemDef._id}` === q.trim().toLowerCase())) {
                 (el as HTMLElement).style.display = '';
             } else {
                 (el as HTMLElement).style.display = 'none';
@@ -289,7 +413,7 @@ export class BankTabs extends Plugin {
         }
       
         if (!this.settings.memory.value) {
-            this.lastQuery = '';
+            this.lastQuery = ['*'];
         }
 
         // Find all bank item elements by data-slot attribute
