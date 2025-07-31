@@ -67,8 +67,6 @@ export class BankTabs extends Plugin {
         }
         this.injectTabBox();
         this.updateTabBoxVisibility();
-        this.injectSearchBox();
-        this.updateSearchBoxVisibility();
     }
 
     init(): void {
@@ -84,8 +82,6 @@ export class BankTabs extends Plugin {
         }
         this.injectTabBox();
         this.updateTabBoxVisibility();
-        this.injectSearchBox();
-        this.updateSearchBoxVisibility();
 
         const mainPlayer = document.highlite?.gameHooks?.EntityManager?.Instance?.MainPlayer;
         const bankStorage = mainPlayer.BankStorageItems;
@@ -96,149 +92,6 @@ export class BankTabs extends Plugin {
         }
     }
 
-    
-    updateSearchBoxVisibility() {
-        const bankMenu = document.getElementById('hs-bank-menu');
-        if (!bankMenu) {
-            this.removeSearchBox();
-            return;
-        }
-
-        // Check if bank is visible
-        const isVisible = this.isBankVisible(bankMenu);
-
-        if (isVisible && !this.searchBox) {
-            this.injectSearchBox();
-        } else if (!isVisible && this.searchBox) {
-            this.removeSearchBox();
-        }
-    }
-
-    // In removeSearchBox, just remove from DOM (header) and cleanup
-    removeSearchBox() {
-        const existingSearchBoxes = document.querySelectorAll('#bank-tab-edit-box');
-        existingSearchBoxes.forEach(box => box.remove());
-        this.searchBox = null;
-        if (this.resizeListener) {
-            window.removeEventListener('resize', this.resizeListener);
-            this.resizeListener = null;
-        }
-    }
-
-    injectSearchBox() {
-        // Prevent duplicate injection - check both internal reference and DOM presence
-        if (this.searchBox || document.getElementById('bank-tab-edit-box'))
-            return;
-
-        // Find the bank menu and header
-        const bankMenu = document.getElementById('hs-bank-menu');
-        if (!bankMenu) return;
-        const header = bankMenu.querySelector('.hs-menu-header');
-        if (!header) return;
-
-        // Create the search box container
-        const searchContainer = document.createElement('div');
-        searchContainer.id = 'bank-tab-edit-box';
-        searchContainer.classList.add('bank-tab-edit-container');
-        searchContainer.style.marginLeft = 'auto'; // Remove left margin
-        this.searchBox = searchContainer;
-
-        // Create the input
-        const input = document.createElement('input');
-        input.type = 'text';
-        input.placeholder = 'Add/Remove Tab';
-        input.classList.add('bank-tab-edit-input');
-        input.classList.add('hs-text-input');
-        input.style.width = '160px'; // Slightly more compact
-        input.style.outline = 'none';
-        input.style.marginRight = '8px'; // Small space between input and close button
-        // input.value = this.settings.memory.value ? this.lastQuery : '';
-
-        // Prevent game from processing keystrokes while typing
-        input.addEventListener('keydown', e => e.stopPropagation());
-        input.addEventListener('keyup', e => e.stopPropagation());
-        input.addEventListener('keypress', e => {
-            e.stopPropagation();
-
-            if(e.key === 'Enter') {
-
-                if(!input.value) {
-                    return;
-                }
-                
-                let tabJsonNew = JSON.parse(`${this.settings.tabGroups.value}`);
-
-                if(Object.keys(tabJsonNew).includes(input.value)) {
-                    tabJsonNew[input.value] = undefined;
-                } else {
-                    tabJsonNew[input.value] = [];
-                }
-
-                this.settings.tabGroups!.value = JSON.stringify(tabJsonNew);
-                input.value = "";
-
-                            // const query = input.value.trim().toLowerCase();
-            // this.lastQuery = query; // Store the last query
-            // this.highlightBankQuery(query);
-
-              this.settings.tabGroups!.value = JSON.stringify(tabJsonNew);
-
-              this.removeTabBox();
-              this.injectTabBox();
-
-                                      document.highlite.managers.SettingsManager.updatePluginSettingsUI(
-                            this
-                        );
-
-            }
-        });
-
-        // Add focus styling and prevent focus stealing (matching other plugins)
-        input.addEventListener('focus', e => {
-            e.preventDefault();
-            e.stopPropagation();
-        });
-
-        // Prevent focus stealing on mousedown
-        searchContainer.addEventListener('mousedown', e => {
-            e.preventDefault();
-            e.stopPropagation();
-            input.focus();
-        });
-
-        searchContainer.appendChild(input);
-
-        // Insert the search bar immediately before the close button
-        const closeBtn = header.querySelector('button');
-        if (closeBtn) {
-            header.insertBefore(searchContainer, closeBtn);
-        } else {
-            header.appendChild(searchContainer);
-        }
-
-        // Add highlight style if not present
-        if (!document.getElementById('bank-helper-highlight-style')) {
-            const style = document.createElement('style');
-            style.id = 'bank-helper-highlight-style';
-            style.textContent = `
-        .bank-tab-edit-container {
-          padding: 0px;
-        }
-        .bank-tab-edit-input {
-          padding: 6px 10px;
-          color: #fff;
-          font-size: 14px;
-        }
-        .bank-helper-greyed-out {
-          opacity: 0.3 !important;
-          filter: grayscale(100%) !important;
-          transition: opacity 0.2s, filter 0.2s;
-        }
-      `;
-            document.head.appendChild(style);
-        }
-    }
-    
     BankUIManager_handleCenterMenuWillBeRemoved() {
         this.destroy();
     }
@@ -312,10 +165,11 @@ export class BankTabs extends Plugin {
   float: left;
   // border: solid 2px;
   // border-color: rgb(188, 188, 188);
-  padding: 14px 16px;
+  padding: 8px 12px;
   transition: 0.3s;
   background-color: rgb(130, 130, 130);
   width: min-content;
+  min-width: 60px;
 }
 
 /* Change background color of buttons on hover */
@@ -345,6 +199,8 @@ export class BankTabs extends Plugin {
         tabBox.id = 'bank-tabs';
         tabBox.style.display = 'flex';
         tabBox.style.flexWrap = 'wrap';
+        tabBox.style.float = 'left';
+        tabBox.style.width = 'inherit';
         tabBox.classList.add('bank-tabs-container');
         this.tabBox = tabBox;
 
@@ -473,6 +329,72 @@ export class BankTabs extends Plugin {
 
         });
 
+        // Create the input
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Add/Remove Tab';
+        input.classList.add('bank-tab-edit-input');
+        input.classList.add('hs-text-input');
+        input.style.width = '120px'; // Slightly more compact
+        input.style.padding = '8px 12px';
+        input.style.outline = 'none';
+        input.style.float = 'right';
+        // input.value = this.settings.memory.value ? this.lastQuery : '';
+
+        // Prevent game from processing keystrokes while typing
+        input.addEventListener('keydown', e => e.stopPropagation());
+        input.addEventListener('keyup', e => e.stopPropagation());
+        input.addEventListener('keypress', e => {
+            e.stopPropagation();
+
+            if(e.key === 'Enter') {
+
+                if(!input.value) {
+                    return;
+                }
+                
+                let tabJsonNew = JSON.parse(`${this.settings.tabGroups.value}`);
+
+                if(Object.keys(tabJsonNew).includes(input.value)) {
+                    tabJsonNew[input.value] = undefined;
+                } else {
+                    tabJsonNew[input.value] = [];
+                }
+
+                this.settings.tabGroups!.value = JSON.stringify(tabJsonNew);
+                input.value = "";
+
+                            // const query = input.value.trim().toLowerCase();
+            // this.lastQuery = query; // Store the last query
+            // this.highlightBankQuery(query);
+
+              this.settings.tabGroups!.data = JSON.stringify(tabJsonNew);
+
+              this.removeTabBox();
+              this.injectTabBox();
+
+                                      document.highlite.managers.SettingsManager.updatePluginSettingsUI(
+                            this
+                        );
+
+            }
+        });
+
+        // Add focus styling and prevent focus stealing (matching other plugins)
+        input.addEventListener('focus', e => {
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        // Prevent focus stealing on mousedown
+        input.addEventListener('mousedown', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            input.focus();
+        });
+
+        tabBox.appendChild(input);
+
 
         // Insert the tab box immediately before the close button
         if (bankMenu) {
@@ -562,6 +484,7 @@ export class BankTabs extends Plugin {
       
         if (!this.settings.memory.value) {
             this.lastQuery = ['*'];
+            this.selectedTab = 'All';
         }
 
         // Find all bank item elements by data-slot attribute
