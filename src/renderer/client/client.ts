@@ -13,9 +13,9 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { Highlite } from '@highlite/plugin-api'
-import { Reflector } from '@highlite/plugin-api'
-import { HighliteResources } from '@highlite/plugin-api';
+import { Highlite } from '@highlite/core'
+import { Reflector } from '@highlite/core'
+import { HighliteResources } from '@highlite/core';
 
 import '@iconify/iconify';
 import '@static/css/index.css';
