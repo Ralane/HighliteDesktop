@@ -1,7 +1,7 @@
 {
   "name": "highlite",
   "productName": "HighLite",
-  "version": "2.2.0-beta",
+  "version": "2.2.0-beta.1",
   "description": "A RuneLite-esque Client for the game High Spell",
   "homepage": "https://github.com/Highl1te/HighliteDesktop#readme",
   "engines": {
@@ -27,11 +27,12 @@
     "build:linux": "yarn build && electron-builder --linux",
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,html}\"",
-    "format:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\" --ignore-unknown"
+    "format:fix": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,html}\" --ignore-unknown",
+    "release": "electron-builder"
   },
   "build": {
     "appId": "com.highlite.desktop",
-    "generateUpdatesFilesForAllChannels": true,
+    "copyright": "Copyright © 2025 HighLite",
     "asar": true,
     "files": [
       "out/**/*.*"
