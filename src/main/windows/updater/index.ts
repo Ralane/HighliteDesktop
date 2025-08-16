@@ -17,8 +17,19 @@ import { ipcMain, BrowserWindow, app, shell } from 'electron';
 import { autoUpdater } from 'electron-updater';
 import log from 'electron-log';
 import path from 'path';
+import { settingsService } from '../../modules/settingsManagement';
 
+
+await settingsService.load();
 autoUpdater.autoDownload = false; // Disable auto download to control it manually
+
+if (settingsService.getByName('Release Channel') === 'beta') {
+    autoUpdater.channel = 'beta';
+}
+
+if (settingsService.getByName('Release Channel') === 'stable') {
+    autoUpdater.channel = 'latest';
+}
 
 export async function createUpdateWindow() {
     const updateWindow = new BrowserWindow({

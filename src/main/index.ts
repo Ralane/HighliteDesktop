@@ -13,12 +13,13 @@
 // You should have received a copy of the GNU General Public License
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-import { app, ipcMain, BrowserWindow } from 'electron';
-import { createUpdateWindow } from './windows/updater';
-import { createClientWindow } from './windows/client';
-import { createConsoleWindow } from './windows/console';
+import { app, BrowserWindow, ipcMain } from 'electron';
 import { electronApp } from '@electron-toolkit/utils';
+import { createUpdateWindow } from './windows/updater';
+import { createConsoleWindow } from './windows/console';
+import { createClientWindow } from './windows/client';
 import log from 'electron-log';
+import registerScreenshotIPC from './modules/screenshotManagement/index';
 
 log.initialize({ spyRendererConsole: true });
 log.transports.console.level = 'info';
@@ -30,9 +31,12 @@ if (!gotTheLock) {
 }
 
 // Keep a reference to the hidden console window so we can close it when no other windows remain
+
 let consoleWindowRef: BrowserWindow | null = null;
 
 app.whenReady().then(async () => {
+    await settingsService.load();
+    console.log(settingsService.getByName('Release Channel'));
     electronApp.setAppUserModelId('com.highlite.desktop');
     const updateWindow: BrowserWindow = await createUpdateWindow();
 
@@ -41,6 +45,7 @@ app.whenReady().then(async () => {
         consoleWindowRef = null;
     });
 
+    registerScreenshotIPC();
     ipcMain.once('delay-update', async () => {
         await createClientWindow();
         updateWindow.close();
