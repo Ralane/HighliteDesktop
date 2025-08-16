@@ -35,8 +35,6 @@ if (!gotTheLock) {
 let consoleWindowRef: BrowserWindow | null = null;
 
 app.whenReady().then(async () => {
-    await settingsService.load();
-    console.log(settingsService.getByName('Release Channel'));
     electronApp.setAppUserModelId('com.highlite.desktop');
     const updateWindow: BrowserWindow = await createUpdateWindow();
 
