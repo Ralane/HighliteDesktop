@@ -188,6 +188,13 @@ body {
     object-fit: cover;
     filter: blur(3px);
 }
+/* Tone down the animation to avoid vestibular motion triggers. */
+@media (prefers-reduced-motion: reduce) {
+  .video-background {
+    display: none
+  }
+}
+
 #iconbar .iconify {
     margin: 0 5px;
     font-size: 16px;
